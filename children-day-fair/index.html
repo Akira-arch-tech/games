@@ -1067,6 +1067,56 @@
 
   .share-tips strong { color: var(--pink); }
 
+  .share-qr-box {
+    text-align: center;
+    margin: 14px 0;
+    padding: 14px;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #f0e0ff;
+  }
+
+  .share-qr-box h4 {
+    font-size: 0.88em;
+    color: var(--purple);
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  .share-qr-canvas-wrap {
+    display: inline-flex;
+    padding: 10px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(162, 155, 254, 0.2);
+  }
+
+  #share-qr-canvas {
+    display: block;
+    width: 200px;
+    height: 200px;
+  }
+
+  .share-qr-hint {
+    font-size: 0.75em;
+    color: #aaa;
+    margin-top: 10px;
+    line-height: 1.45;
+  }
+
+  .share-qr-error {
+    font-size: 0.8em;
+    color: #ff7675;
+    padding: 12px;
+  }
+
+  .share-link-label {
+    font-size: 0.82em;
+    color: var(--pink);
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+
   .share-warn {
     background: #fff8e6;
     border: 1px solid #ffe8a0;
@@ -1415,13 +1465,22 @@
       <div class="share-card-title" id="share-preview-title">🎪 六一游园会</div>
       <div class="share-card-desc" id="share-preview-desc">6个年级小挑战，通关积分换礼物～</div>
     </div>
+    <p class="share-link-label">🔗 完整游戏链接（复制分享用这个）</p>
     <div class="share-link-box">
       <input id="share-link-input" readonly value="">
       <button class="btn btn-sm btn-blue" type="button" onclick="copyShareLink()">复制</button>
     </div>
+    <div class="share-qr-box" id="share-qr-box">
+      <h4>📷 扫码分享（同一长链接）</h4>
+      <div class="share-qr-canvas-wrap" id="share-qr-wrap">
+        <canvas id="share-qr-canvas" width="200" height="200" aria-label="游戏分享二维码"></canvas>
+      </div>
+      <p class="share-qr-hint" id="share-qr-hint">好友用微信扫一扫，即可打开游园会</p>
+      <p class="share-qr-error hidden" id="share-qr-error"></p>
+    </div>
     <div class="share-tips" id="share-tips-text"></div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <button class="btn btn-primary" type="button" onclick="copyShareLink()">复制链接</button>
+      <button class="btn btn-primary" type="button" onclick="copyShareLink()">复制长链接</button>
       <button class="btn btn-sm btn-yellow" type="button" onclick="closeSharePanel()">关闭</button>
     </div>
   </div>
@@ -1473,6 +1532,8 @@ const WECHAT_SHARE = {
 
 let wxShareReady = false;
 let wxScriptLoading = null;
+let qrScriptLoading = null;
+let lastShareQrUrl = '';
 
 // ===== NICKNAMES (player = 收礼玩游戏的 / host = 送礼转发的) =====
 function sanitizeNickname(raw) {
@@ -1531,6 +1592,7 @@ function applyHostNameUI() {
 function saveHostNickname(raw) {
   const name = sanitizeNickname(raw) || DEFAULT_HOST_NICKNAME;
   state.hostNickname = name;
+  lastShareQrUrl = '';
   saveState();
   applyHostNameUI();
   updateShareMetaTags();
@@ -1542,6 +1604,7 @@ function onHostNicknameInput() {
   const input = document.getElementById('host-nickname-input');
   const name = sanitizeNickname(input && input.value) || DEFAULT_HOST_NICKNAME;
   if (input && input.value.trim()) state.hostNickname = name;
+  lastShareQrUrl = '';
   applyHostNameUI();
   refreshSharePanel();
 }
@@ -2875,7 +2938,77 @@ function getShareTipsHtml() {
     }
     return '在微信里请点右上角 <strong>···</strong> → <strong>转发给朋友</strong>，好友点开链接即可直接玩。<br><br>若需自定义分享标题与封面图，请配置公众号与 <strong>WECHAT_SHARE.signApi</strong>（见 wx-sign-server.example.js）。';
   }
-  return '复制下方链接发给好友。链接里会带上你的送礼昵称（<strong>?from=</strong>），对方打开会看到礼物来自你。';
+  return '复制下方<strong>完整长链接</strong>，或让好友<strong>扫二维码</strong>（内容与链接一致）。链接会带上你的送礼昵称（<strong>?from=</strong>）。';
+}
+
+function loadQrScript() {
+  if (window.QRCode) return Promise.resolve();
+  if (qrScriptLoading) return qrScriptLoading;
+  qrScriptLoading = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('二维码库加载失败'));
+    document.head.appendChild(s);
+  });
+  return qrScriptLoading;
+}
+
+async function renderShareQrCode(url) {
+  const canvas = document.getElementById('share-qr-canvas');
+  const errEl = document.getElementById('share-qr-error');
+  const wrap = document.getElementById('share-qr-wrap');
+  const hint = document.getElementById('share-qr-hint');
+  if (!canvas) return;
+
+  const hideErr = () => {
+    if (errEl) errEl.classList.add('hidden');
+    if (wrap) wrap.style.display = '';
+    if (hint) hint.style.display = '';
+  };
+
+  if (!url) {
+    lastShareQrUrl = '';
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#fafafa';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    if (errEl) {
+      errEl.textContent = '部署到 HTTPS 后可生成二维码';
+      errEl.classList.remove('hidden');
+    }
+    if (wrap) wrap.style.display = 'none';
+    if (hint) hint.style.display = 'none';
+    return;
+  }
+
+  if (url === lastShareQrUrl) return;
+  lastShareQrUrl = url;
+  hideErr();
+
+  try {
+    await loadQrScript();
+    await QRCode.toCanvas(canvas, url, {
+      width: 200,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#6C5CE7', light: '#ffffff' },
+    });
+    if (hint) {
+      hint.textContent = isWeChatBrowser()
+        ? '可长按保存二维码，或让好友当面扫一扫'
+        : '好友用微信扫一扫即可打开游园会（与上方长链接相同）';
+    }
+  } catch (e) {
+    lastShareQrUrl = '';
+    if (wrap) wrap.style.display = 'none';
+    if (hint) hint.style.display = 'none';
+    if (errEl) {
+      errEl.textContent = '二维码生成失败，请使用上方复制链接分享';
+      errEl.classList.remove('hidden');
+    }
+  }
 }
 
 function refreshSharePanel() {
@@ -2898,6 +3031,7 @@ function refreshSharePanel() {
       warnEl.innerHTML = '';
     }
   }
+  renderShareQrCode(p.link);
 }
 
 function openSharePanel(focusHost) {
