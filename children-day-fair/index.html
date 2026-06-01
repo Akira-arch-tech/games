@@ -54,6 +54,16 @@
     overscroll-behavior-y: none;
   }
 
+  #app-watermark {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0.07;
+    background-repeat: repeat;
+    background-size: 168px 128px;
+  }
+
   /* ===== SCREENS ===== */
   .screen {
     display: none;
@@ -196,6 +206,38 @@
   }
 
   .nickname-error.show { display: block; }
+
+  .host-nickname-box {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #f0d0e8;
+    text-align: left;
+  }
+
+  .host-nickname-box label {
+    display: block;
+    font-size: 0.85em;
+    color: var(--purple);
+    margin-bottom: 6px;
+    font-weight: bold;
+  }
+
+  .host-nickname-box input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e8e0ff;
+    border-radius: 12px;
+    font-size: 1em;
+    outline: none;
+  }
+
+  .host-nickname-box input:focus { border-color: var(--purple); }
+
+  .intro-gift-from {
+    font-size: 0.92em;
+    color: var(--purple);
+    font-weight: 600;
+  }
 
   /* ===== BUTTONS ===== */
   .btn {
@@ -1148,6 +1190,7 @@
 </style>
 </head>
 <body>
+<div id="app-watermark" aria-hidden="true"></div>
 
 <!-- ===== SCREEN 1: INTRO ===== -->
 <div id="intro" class="screen screen--scroll active">
@@ -1167,32 +1210,34 @@
     <p class="subtitle" id="intro-subtitle">2026 · 专属于你的童年乐园 🎀</p>
 
     <div class="nickname-box">
-      <label for="player-nickname-input">🎀 请输入你的昵称</label>
+      <label for="player-nickname-input">🎀 玩家昵称（收礼物的人）</label>
       <input
         id="player-nickname-input"
         type="text"
         maxlength="12"
-        placeholder="例如：星灿、小灿、宝宝…"
+        placeholder="Kirara"
         autocomplete="nickname"
         oninput="updateIntroPreview()"
         onkeydown="if(event.key==='Enter')confirmNicknameAndStart()"
       />
-      <p class="nickname-hint">最多 12 个字，会出现在信件、地图和领奖页里</p>
-      <p class="nickname-error" id="nickname-error">请先输入昵称再开始哦～</p>
+      <p class="nickname-hint">默认 Kirara，可改成你的名字；会出现在底纹、地图和领奖页</p>
+      <p class="nickname-error" id="nickname-error">昵称无效，请检查后再试～</p>
     </div>
 
     <div class="letter">
-      <p>亲爱的 <span class="name" id="intro-player-name">你</span> ～</p>
+      <p class="intro-gift-from" id="intro-gift-line">这是 <span id="intro-host-display">Akira</span> 偷偷给你搭的游园会 🎈</p>
+      <br>
+      <p>亲爱的 <span class="name" id="intro-player-name">Kirara</span> ～</p>
       <br>
       <p>今天是六一儿童节 🎈</p>
-      <p>虽然要上班好麻烦，但我给你偷偷搭了一个游园会！</p>
+      <p>虽然要上班好麻烦，但游园会已经准备好啦！</p>
       <br>
       <p>一共 <strong>6个年级</strong>，每关都有小挑战</p>
       <p>通关积分越高，奖品越好哦 🎁</p>
       <br>
       <p id="intro-line-role">今天，你就是那个最可爱的小学生 🌸</p>
       <br>
-      <p style="text-align:right;color:#aaa;font-size:0.9em">— 耀星 留 💕</p>
+      <p style="text-align:right;color:#aaa;font-size:0.9em">— <span id="intro-host-sign">Akira</span> 留 💕</p>
     </div>
 
     <button class="btn btn-primary pulse" id="start-fair-btn" onclick="confirmNicknameAndStart()">
@@ -1291,7 +1336,8 @@
     <p class="map-progress-text" id="map-progress-text">当前进度：0 / 6 关完成</p>
     <div class="map-actions">
       <button class="btn btn-sm btn-green" onclick="openSharePanel()">📤 分享给好友</button>
-      <button class="btn btn-sm btn-blue" onclick="goEditNickname()">✏️ 修改昵称</button>
+      <button class="btn btn-sm btn-blue" onclick="goEditNickname()">✏️ 改玩家昵称</button>
+      <button class="btn btn-sm btn-purple" onclick="openSharePanel(true)">🎁 改送礼昵称</button>
       <button class="btn btn-sm btn-yellow" onclick="resetProgress()">🧹 清空进度</button>
     </div>
   </div>
@@ -1353,6 +1399,18 @@
     <h3 style="text-align:center">分享给好友</h3>
     <p style="font-size:0.85em;color:#888;margin-bottom:12px;text-align:center">好友在微信里点开链接就能直接玩</p>
     <div id="share-warn-box"></div>
+    <div class="host-nickname-box">
+      <label for="host-nickname-input">🎁 送礼人昵称（转发链接时带给好友）</label>
+      <input
+        id="host-nickname-input"
+        type="text"
+        maxlength="12"
+        placeholder="Akira"
+        autocomplete="nickname"
+        oninput="onHostNicknameInput()"
+      />
+      <p class="nickname-hint" style="margin-top:8px">默认 Akira；好友打开链接会看到「礼物来自你」。纯网页无法自动读取微信昵称，请在此填写你在微信里的称呼。</p>
+    </div>
     <div class="share-card-preview">
       <div class="share-card-title" id="share-preview-title">🎪 六一游园会</div>
       <div class="share-card-desc" id="share-preview-desc">6个年级小挑战，通关积分换礼物～</div>
@@ -1390,12 +1448,14 @@ let state = {
   currentGrade: 0,
   currentGameScore: 0,
   playerNickname: '',
+  hostNickname: '',
 };
 
 const GRADE_MAX_SCORE = 30; // each grade = 30 pts max
-const SAVE_KEY = 'children-day-fair-state-v1';
-const DEFAULT_NICKNAME = '小朋友';
-const HOST_NAME = '耀星';
+const SAVE_KEY = 'children-day-fair-state-v2';
+const DEFAULT_PLAYER_NICKNAME = 'Kirara';
+const DEFAULT_HOST_NICKNAME = 'Akira';
+const URL_HOST_PARAM_KEYS = ['from', 'host', 'gifter'];
 
 /**
  * 微信分享配置（部署到 HTTPS 后生效）
@@ -1414,32 +1474,111 @@ const WECHAT_SHARE = {
 let wxShareReady = false;
 let wxScriptLoading = null;
 
-// ===== PLAYER NICKNAME =====
+// ===== NICKNAMES (player = 收礼玩游戏的 / host = 送礼转发的) =====
 function sanitizeNickname(raw) {
   return String(raw || '').trim().replace(/[<>"'\\]/g, '').slice(0, 12);
+}
+
+function getPlayerName() {
+  return sanitizeNickname(state.playerNickname) || DEFAULT_PLAYER_NICKNAME;
+}
+
+function getHostName() {
+  return sanitizeNickname(state.hostNickname) || DEFAULT_HOST_NICKNAME;
 }
 
 function hasPlayerNickname() {
   return !!sanitizeNickname(state.playerNickname);
 }
 
-function getPlayerName() {
-  return sanitizeNickname(state.playerNickname) || DEFAULT_NICKNAME;
+function parseHostFromUrl() {
+  try {
+    const params = new URLSearchParams(location.search);
+    for (const key of URL_HOST_PARAM_KEYS) {
+      const v = sanitizeNickname(params.get(key));
+      if (v) return v;
+    }
+  } catch (e) { /* ignore */ }
+  return '';
+}
+
+function buildWatermarkPattern(text) {
+  const safe = String(text).replace(/[<>&'"]/g, '').slice(0, 12) || DEFAULT_PLAYER_NICKNAME;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='168' height='128' viewBox='0 0 168 128'>
+    <text x='12' y='72' fill='%23FF6B9D' font-size='22' font-family='PingFang SC,sans-serif' transform='rotate(-24 48 64)' opacity='0.85'>${safe}</text>
+  </svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+function updateWatermark() {
+  const el = document.getElementById('app-watermark');
+  if (!el) return;
+  el.style.backgroundImage = buildWatermarkPattern(getPlayerName());
+}
+
+function applyHostNameUI() {
+  const host = getHostName();
+  const hostInput = document.getElementById('host-nickname-input');
+  if (hostInput) hostInput.value = sanitizeNickname(state.hostNickname) || hostInput.value || host;
+
+  const ids = ['intro-host-display', 'intro-host-sign'];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = host;
+  });
+}
+
+function saveHostNickname(raw) {
+  const name = sanitizeNickname(raw) || DEFAULT_HOST_NICKNAME;
+  state.hostNickname = name;
+  saveState();
+  applyHostNameUI();
+  updateShareMetaTags();
+  if (wxShareReady) applyWxShareData();
+  refreshSharePanel();
+}
+
+function onHostNicknameInput() {
+  const input = document.getElementById('host-nickname-input');
+  const name = sanitizeNickname(input && input.value) || DEFAULT_HOST_NICKNAME;
+  if (input && input.value.trim()) state.hostNickname = name;
+  applyHostNameUI();
+  refreshSharePanel();
+}
+
+function migrateSaveFromV1() {
+  try {
+    if (localStorage.getItem(SAVE_KEY)) return;
+    const raw = localStorage.getItem('children-day-fair-state-v1');
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return;
+    state.playerNickname = sanitizeNickname(parsed.playerNickname);
+    state.hostNickname = sanitizeNickname(parsed.hostNickname);
+    state.grades = parsed.grades && typeof parsed.grades === 'object' ? parsed.grades : {};
+    state.totalScore = Number(parsed.totalScore) || 0;
+    recoverInvalidState();
+    saveState();
+  } catch (e) { /* ignore */ }
+}
+
+function finalizeNicknamesAfterLoad() {
+  const fromUrl = parseHostFromUrl();
+  if (fromUrl) state.hostNickname = fromUrl;
+  else if (!sanitizeNickname(state.hostNickname)) state.hostNickname = DEFAULT_HOST_NICKNAME;
+
+  const hasProgress = state.totalScore > 0 || Object.keys(state.grades).length > 0;
+  if (hasProgress && !sanitizeNickname(state.playerNickname)) {
+    state.playerNickname = DEFAULT_PLAYER_NICKNAME;
+  }
 }
 
 function applyPlayerNameUI() {
   const saved = sanitizeNickname(state.playerNickname);
   const input = document.getElementById('player-nickname-input');
-  if (input) input.value = saved || input.value || '';
+  if (input && saved) input.value = saved;
 
-  if (!saved) {
-    document.title = '🎪 六一游园会 · 童年游乐场';
-    updateIntroPreview();
-    updateStartFairBtn();
-    return;
-  }
-
-  const name = saved;
+  const name = getPlayerName();
   document.title = `🎪 六一游园会 · 专属于${name}的童年游乐场`;
 
   const introName = document.getElementById('intro-player-name');
@@ -1471,6 +1610,9 @@ function applyPlayerNameUI() {
   const ovBtn = document.getElementById('ov-btn');
   if (ovBtn) ovBtn.textContent = `${name}，继续游园！`;
 
+  applyHostNameUI();
+  updateWatermark();
+  updateIntroPreview();
   updateStartFairBtn();
 }
 
@@ -1484,26 +1626,18 @@ function updateStartFairBtn() {
 function updateIntroPreview() {
   const input = document.getElementById('player-nickname-input');
   const err = document.getElementById('nickname-error');
-  const preview = sanitizeNickname(input && input.value);
+  const preview = sanitizeNickname(input && input.value) || DEFAULT_PLAYER_NICKNAME;
   if (err) err.classList.remove('show');
-  document.getElementById('intro-player-name').textContent = preview || '你';
-  document.getElementById('intro-subtitle').textContent = preview
-    ? `2026 · ${preview} 的专属童年乐园 🎀`
-    : '2026 · 专属于你的童年乐园 🎀';
-  document.getElementById('intro-line-role').textContent = preview
-    ? `${preview}，今天你就是那个最可爱的小学生 🌸`
-    : '今天，你就是那个最可爱的小学生 🌸';
+  document.getElementById('intro-player-name').textContent = preview;
+  document.getElementById('intro-subtitle').textContent = `2026 · ${preview} 的专属童年乐园 🎀`;
+  document.getElementById('intro-line-role').textContent = `${preview}，今天你就是那个最可爱的小学生 🌸`;
+  updateWatermark();
 }
 
 function confirmNicknameAndStart() {
   const input = document.getElementById('player-nickname-input');
-  const nickname = sanitizeNickname(input && input.value);
+  const nickname = sanitizeNickname(input && input.value) || DEFAULT_PLAYER_NICKNAME;
   const err = document.getElementById('nickname-error');
-  if (!nickname) {
-    if (err) err.classList.add('show');
-    if (input) input.focus();
-    return;
-  }
   if (err) err.classList.remove('show');
   state.playerNickname = nickname;
   saveState();
@@ -1554,7 +1688,8 @@ function showResult() {
 function goBack() { showScreen('map'); updateMapUI(); stopCurrentGame(); startBGM('default'); }
 function playAgain() {
   const nickname = state.playerNickname;
-  state = { totalScore: 0, grades: {}, currentGrade: 0, currentGameScore: 0, playerNickname: nickname };
+  const hostNickname = state.hostNickname;
+  state = { totalScore: 0, grades: {}, currentGrade: 0, currentGameScore: 0, playerNickname: nickname, hostNickname };
   saveState();
   updateMapUI();
   showScreen('intro');
@@ -1804,6 +1939,7 @@ function loadState() {
       currentGrade: 0,
       currentGameScore: 0,
       playerNickname: sanitizeNickname(parsed.playerNickname),
+      hostNickname: sanitizeNickname(parsed.hostNickname),
     };
     recoverInvalidState();
   } catch (err) {
@@ -1829,7 +1965,8 @@ function resetProgress() {
   const ok = window.confirm(`确认清空 ${getPlayerName()} 的游园会进度吗？（昵称会保留）`);
   if (!ok) return;
   const nickname = state.playerNickname;
-  state = { totalScore: 0, grades: {}, currentGrade: 0, currentGameScore: 0, playerNickname: nickname };
+  const hostNickname = state.hostNickname;
+  state = { totalScore: 0, grades: {}, currentGrade: 0, currentGameScore: 0, playerNickname: nickname, hostNickname };
   saveState();
   updateMapUI();
 }
@@ -2409,9 +2546,9 @@ function buildResultScreen() {
   // Gifts
   const gifts = [
     { pts: 20, emoji: '🤗', name: `${name} 的超级大抱抱`, desc: '随时可用，永不过期' },
-    { pts: 40, emoji: '🍜', name: `${name} 想吃的一顿`, desc: `你点菜，${HOST_NAME} 请客` },
+    { pts: 40, emoji: '🍜', name: `${name} 想吃的一顿`, desc: `你点菜，${getHostName()} 请客` },
     { pts: 80, emoji: '🎬', name: `${name} 的电影之夜`, desc: '选你最想看的片' },
-    { pts: 120, emoji: '🎁', name: `${name} 的神秘小礼物`, desc: `${HOST_NAME} 亲手准备的惊喜` },
+    { pts: 120, emoji: '🎁', name: `${name} 的神秘小礼物`, desc: `${getHostName()} 亲手准备的惊喜` },
     { pts: 160, emoji: '💍', name: `${name} 的浪漫约会`, desc: '你设计行程，他全程配合' },
   ];
 
@@ -2429,10 +2566,10 @@ function buildResultScreen() {
 
   // End message
   const msgs = [
-    [0, 40, `🌱 ${name}，还需要努力哦！不过没关系，你已经很棒了！记得去找 ${HOST_NAME} 兑换抱抱 🤗`],
-    [40, 80, `🌸 ${name}，答得不错！今天的六一游园会是不是很有趣？去找他兑换奖励吧！`],
-    [80, 130, `🌟 ${name}，你太厉害了！这么高分，去找 ${HOST_NAME} 好好兑换礼品，他一定在等你 💕`],
-    [130, 999, `🏆 ${name}，满分王者！把这个截图给 ${HOST_NAME}，让他心甘情愿兑现每一个奖励 👑💕`],
+    [0, 40, `🌱 ${name}，还需要努力哦！不过没关系，你已经很棒了！记得去找 ${getHostName()} 兑换抱抱 🤗`],
+    [40, 80, `🌸 ${name}，答得不错！今天的六一游园会是不是很有趣？去找 ${getHostName()} 兑换奖励吧！`],
+    [80, 130, `🌟 ${name}，你太厉害了！这么高分，去找 ${getHostName()} 好好兑换礼品，Ta 一定在等你 💕`],
+    [130, 999, `🏆 ${name}，满分王者！把这个截图给 ${getHostName()}，让 Ta 心甘情愿兑现每一个奖励 👑💕`],
   ];
   const msg = msgs.find(([min, max]) => score >= min && score < max);
   document.getElementById('end-message').innerHTML = `
@@ -2611,9 +2748,18 @@ function isShareReadyOrigin() {
 }
 
 function getSharePageUrl() {
-  if (WECHAT_SHARE.publicUrl) return WECHAT_SHARE.publicUrl.split('#')[0];
-  if (!isShareReadyOrigin()) return '';
-  return location.href.split('#')[0];
+  let base = '';
+  if (WECHAT_SHARE.publicUrl) base = WECHAT_SHARE.publicUrl.split('#')[0];
+  else if (isShareReadyOrigin()) base = `${location.origin}${location.pathname}`;
+  else return '';
+  try {
+    const u = new URL(base);
+    u.searchParams.set('from', getHostName());
+    return u.toString();
+  } catch (e) {
+    const sep = base.includes('?') ? '&' : '?';
+    return `${base}${sep}from=${encodeURIComponent(getHostName())}`;
+  }
 }
 
 function getShareImageUrl() {
@@ -2626,17 +2772,14 @@ function getShareImageUrl() {
 }
 
 function buildSharePayload() {
-  const name = hasPlayerNickname() ? getPlayerName() : '你';
+  const host = getHostName();
+  const player = getPlayerName();
   const done = Object.values(state.grades).filter(g => g && g.completed).length;
-  let title = WECHAT_SHARE.shareTitle;
-  let desc = WECHAT_SHARE.shareDesc;
-  if (hasPlayerNickname()) {
-    title = `🎪 ${name} 的六一游园会`;
-    if (done > 0) {
-      desc = `${name} 已完成 ${done}/6 关 · 总分 ${state.totalScore}，快来挑战吧～`;
-    } else {
-      desc = `${name} 邀请你来玩游园会 · 6关小挑战，点开就能玩`;
-    }
+  let title = `🎪 ${host} 送你六一游园会`;
+  let desc = `${host} 准备了 6 关小挑战，点开就能在微信里直接玩 🎁`;
+  if (done > 0) {
+    title = `🎪 ${player} 的游园会（礼物来自 ${host}）`;
+    desc = `${player} 已完成 ${done}/6 关 · 总分 ${state.totalScore}。${host} 邀请你也来挑战～`;
   }
   return {
     title,
@@ -2732,7 +2875,7 @@ function getShareTipsHtml() {
     }
     return '在微信里请点右上角 <strong>···</strong> → <strong>转发给朋友</strong>，好友点开链接即可直接玩。<br><br>若需自定义分享标题与封面图，请配置公众号与 <strong>WECHAT_SHARE.signApi</strong>（见 wx-sign-server.example.js）。';
   }
-  return '复制下方链接，粘贴到微信发给好友。对方点开即可在浏览器里直接玩游戏。';
+  return '复制下方链接发给好友。链接里会带上你的送礼昵称（<strong>?from=</strong>），对方打开会看到礼物来自你。';
 }
 
 function refreshSharePanel() {
@@ -2757,18 +2900,29 @@ function refreshSharePanel() {
   }
 }
 
-function openSharePanel() {
+function openSharePanel(focusHost) {
+  applyHostNameUI();
   updateShareMetaTags();
   refreshSharePanel();
   document.getElementById('share-overlay').classList.remove('hidden');
+  if (focusHost) {
+    const hostInput = document.getElementById('host-nickname-input');
+    if (hostInput) {
+      setTimeout(() => { hostInput.focus(); hostInput.select(); }, 80);
+    }
+  }
   if (isWeChatBrowser()) initWeChatJssdkShare();
 }
 
 function closeSharePanel() {
+  const hostInput = document.getElementById('host-nickname-input');
+  if (hostInput) saveHostNickname(hostInput.value);
   document.getElementById('share-overlay').classList.add('hidden');
 }
 
 async function copyShareLink() {
+  const hostInput = document.getElementById('host-nickname-input');
+  if (hostInput) saveHostNickname(hostInput.value);
   const link = getSharePageUrl();
   if (!link) {
     alert('请先部署到 HTTPS，并在 WECHAT_SHARE.publicUrl 填写游戏网址');
@@ -2796,10 +2950,13 @@ function initShareOnLoad() {
 }
 
 loadState();
+migrateSaveFromV1();
+finalizeNicknamesAfterLoad();
 applyPlayerNameUI();
 updateMapUI();
 initShareOnLoad();
-if (hasPlayerNickname() && (state.totalScore > 0 || Object.keys(state.grades).length > 0)) {
+const hasProgress = state.totalScore > 0 || Object.keys(state.grades).length > 0;
+if (hasProgress) {
   showScreen('map');
 }
 </script>
