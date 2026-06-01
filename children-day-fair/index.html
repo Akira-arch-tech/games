@@ -1117,6 +1117,20 @@
     margin-bottom: 6px;
   }
 
+  .share-public-note {
+    background: linear-gradient(135deg, #e8fff8, #f0f8ff);
+    border: 1px solid #b8f0e0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.78em;
+    color: #2d6a5a;
+    line-height: 1.5;
+    text-align: left;
+    margin-bottom: 12px;
+  }
+
+  .share-public-note strong { color: #00b894; }
+
   .share-warn {
     background: #fff8e6;
     border: 1px solid #ffe8a0;
@@ -1447,7 +1461,8 @@
   <div class="overlay-card" style="max-width:360px;text-align:left">
     <div class="result-emoji" style="font-size:2.6em;text-align:center">📤</div>
     <h3 style="text-align:center">分享给好友</h3>
-    <p style="font-size:0.85em;color:#888;margin-bottom:12px;text-align:center">好友在微信里点开链接就能直接玩</p>
+    <p style="font-size:0.85em;color:#888;margin-bottom:8px;text-align:center">好友在微信里点开链接就能直接玩</p>
+    <div class="share-public-note">✅ <strong>对所有人开放</strong>：好友无需你的 GitHub、微信或任何账号，扫码/点链接即可进入（每人进度保存在自己手机里）。</div>
     <div id="share-warn-box"></div>
     <div class="host-nickname-box">
       <label for="host-nickname-input">🎁 送礼人昵称（转发链接时带给好友）</label>
@@ -2938,7 +2953,7 @@ function getShareTipsHtml() {
     }
     return '在微信里请点右上角 <strong>···</strong> → <strong>转发给朋友</strong>，好友点开链接即可直接玩。<br><br>若需自定义分享标题与封面图，请配置公众号与 <strong>WECHAT_SHARE.signApi</strong>（见 wx-sign-server.example.js）。';
   }
-  return '复制下方<strong>完整长链接</strong>，或让好友<strong>扫二维码</strong>（内容与链接一致）。链接会带上你的送礼昵称（<strong>?from=</strong>）。';
+  return '复制<strong>完整长链接</strong>或扫二维码即可分享。<strong>任何人</strong>都能打开，不需要登录你的账号。链接会带上送礼昵称（<strong>?from=</strong>）。';
 }
 
 function loadQrScript() {
